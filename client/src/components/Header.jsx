@@ -1,10 +1,11 @@
-
 import { Menu, Search, Bell, Plus } from "lucide-react";
 
 export default function Header({
   activePage,
   onOpenSidebar,
   onNewTask,
+  searchQuery,
+  onSearchChange,
 }) {
   return (
     <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-8">
@@ -18,9 +19,7 @@ export default function Header({
         </button>
 
         <div>
-          <p className="text-xs text-slate-400">
-            Workspace / Overview
-          </p>
+          <p className="text-xs text-slate-400">Workspace / Overview</p>
           <h1 className="mt-1 text-lg font-bold">{activePage}</h1>
         </div>
       </div>
@@ -29,9 +28,10 @@ export default function Header({
         <label className="hidden h-10 w-56 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 lg:flex">
           <Search size={17} className="text-slate-400" />
           <input
-            type="search"
+            type="text"
             placeholder="Search tasks..."
-            aria-label="Search tasks"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="w-full bg-transparent text-sm outline-none"
           />
         </label>

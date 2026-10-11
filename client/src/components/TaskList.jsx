@@ -13,6 +13,11 @@ export default function TaskList({
   onStatusFilterChange,
   priorityFilter,
   onPriorityFilterChange,
+  projects,
+  projectFilter,
+  onProjectFilterChange,
+  sortBy,
+  onSortChange,
 }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 xl:col-span-2">
@@ -33,7 +38,7 @@ export default function TaskList({
         </button>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <select
           aria-label="Filter tasks by status"
           value={statusFilter}
@@ -56,6 +61,30 @@ export default function TaskList({
           <option value="High">High priority</option>
           <option value="Medium">Medium priority</option>
           <option value="Low">Low priority</option>
+        </select>
+
+        <select
+          value={projectFilter}
+          onChange={(event) => onProjectFilterChange(event.target.value)}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+        >
+          <option value="All">All Projects</option>
+          {projects.map((project) => (
+            <option key={project} value={project}>
+              {project}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={sortBy}
+          onChange={(event) => onSortChange(event.target.value)}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+        >
+          <option value="Default">Default Order</option>
+          <option value="Title A-Z">Title A-Z</option>
+          <option value="Due Date">Due Date</option>
+          <option value="Priority">Priority</option>
         </select>
       </div>
 
