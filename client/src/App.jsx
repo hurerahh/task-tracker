@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   ListTodo,
@@ -48,6 +47,8 @@ export default function App() {
   const [activePage, setActivePage] = useState("Dashboard");
   const [formOpen, setFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
 
   function handleNewTask() {
     setEditingTask(null);
@@ -62,9 +63,7 @@ export default function App() {
   function handleSaveTask(task) {
     if (editingTask) {
       setTasks((currentTasks) =>
-        currentTasks.map((item) =>
-          item.id === task.id ? task : item
-        )
+        currentTasks.map((item) => (item.id === task.id ? task : item)),
       );
     } else {
       setTasks((currentTasks) => [task, ...currentTasks]);
@@ -76,31 +75,38 @@ export default function App() {
 
   function handleDeleteTask(id) {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this task?"
+      "Are you sure you want to delete this task?",
     );
 
     if (!confirmed) return;
 
+    setTasks((currentTasks) => currentTasks.filter((task) => task.id !== id));
+  }
+
+  function handleStatusChange(id, status) {
     setTasks((currentTasks) =>
-      currentTasks.filter((task) => task.id !== id)
+      currentTasks.map((task) => (task.id === id ? { ...task, status } : task)),
+    );
+  }
+
+  function handlePriorityChange(id, priority) {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === id ? { ...task, priority } : task,
+      ),
     );
   }
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const completed = tasks.filter(
-    (task) => task.status === "Completed"
-  ).length;
+  const completed = tasks.filter((task) => task.status === "Completed").length;
 
   const inProgress = tasks.filter(
-    (task) => task.status === "In Progress"
+    (task) => task.status === "In Progress",
   ).length;
 
   const overdue = tasks.filter(
-    (task) =>
-      task.date &&
-      task.date < today &&
-      task.status !== "Completed"
+    (task) => task.date && task.date < today && task.status !== "Completed",
   ).length;
 
   const stats = [
@@ -140,14 +146,20 @@ export default function App() {
       : activePage === "My Tasks"
         ? tasks
         : activePage === "Upcoming"
-          ? tasks.filter(
-              (task) => task.date && task.date >= today
-            )
+          ? tasks.filter((task) => task.date && task.date >= today)
           : activePage === "Calendar"
             ? tasks.filter((task) => task.date)
-            : tasks.filter(
-                (task) => task.project === activePage
-              );
+            : tasks.filter((task) => task.project === activePage);
+
+  const filteredTasks = visibleTasks.filter((task) => {
+    const matchesStatus =
+      statusFilter === "All" || task.status === statusFilter;
+
+    const matchesPriority =
+      priorityFilter === "All" || task.priority === priorityFilter;
+
+    return matchesStatus && matchesPriority;
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -178,9 +190,7 @@ export default function App() {
               </p>
 
               <h2 className="mt-2 text-2xl font-bold sm:text-3xl">
-                {activePage === "Dashboard"
-                  ? "Welcome back!"
-                  : activePage}
+                {activePage === "Dashboard" ? "Welcome back!" : activePage}
               </h2>
 
               <p className="mt-2 text-sm text-slate-500">
@@ -206,24 +216,26 @@ export default function App() {
 
               <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                 <TaskList
-                  tasks={visibleTasks}
+                  tasks={filteredTasks}
                   onViewAll={() => setActivePage("My Tasks")}
                   onEdit={handleEditTask}
                   onDelete={handleDeleteTask}
+                  onStatusChange={handleStatusChange}
+                  onPriorityChange={handlePriorityChange}
+                  statusFilter={statusFilter}
+                  onStatusFilterChange={setStatusFilter}
+                  priorityFilter={priorityFilter}
+                  onPriorityFilterChange={setPriorityFilter}
                 />
 
                 <div className="space-y-6">
                   <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                    <h3 className="text-lg font-bold">
-                      Task Progress
-                    </h3>
+                    <h3 className="text-lg font-bold">Task Progress</h3>
 
                     <div className="mt-5 flex items-end justify-between">
                       <p className="text-3xl font-bold">
                         {tasks.length
-                          ? Math.round(
-                              (completed / tasks.length) * 100
-                            )
+                          ? Math.round((completed / tasks.length) * 100)
                           : 0}
                         %
                       </p>
@@ -237,9 +249,7 @@ export default function App() {
                         className="h-full rounded-full bg-blue-600 transition-all"
                         style={{
                           width: `${
-                            tasks.length
-                              ? (completed / tasks.length) * 100
-                              : 0
+                            tasks.length ? (completed / tasks.length) * 100 : 0
                           }%`,
                         }}
                       />
@@ -275,6 +285,12 @@ export default function App() {
               onViewAll={() => setActivePage("My Tasks")}
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
+              onStatusChange={handleStatusChange}
+              onPriorityChange={handlePriorityChange}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              priorityFilter={priorityFilter}
+              onPriorityFilterChange={setPriorityFilter}
             />
           )}
 
