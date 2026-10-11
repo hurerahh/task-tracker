@@ -49,6 +49,9 @@ export default function App() {
   const [editingTask, setEditingTask] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [projectFilter, setProjectFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("Default");
 
   function handleNewTask() {
     setEditingTask(null);
@@ -109,6 +112,10 @@ export default function App() {
     (task) => task.date && task.date < today && task.status !== "Completed",
   ).length;
 
+  const projects = [
+    ...new Set(tasks.map((task) => task.project).filter(Boolean)),
+  ];
+
   const stats = [
     {
       title: "Total Tasks",
@@ -151,16 +158,57 @@ export default function App() {
             ? tasks.filter((task) => task.date)
             : tasks.filter((task) => task.project === activePage);
 
-  const filteredTasks = visibleTasks.filter((task) => {
+  const filteredTasks = [...visibleTasks]
+  .filter((task) => {
+    const query = searchQuery.trim().toLowerCase();
+
+    const matchesSearch =
+      !query ||
+      [task.title, task.project, task.status, task.priority]
+        .some((value) =>
+          String(value ?? "").toLowerCase().includes(query)
+        );
+
     const matchesStatus =
       statusFilter === "All" || task.status === statusFilter;
 
     const matchesPriority =
       priorityFilter === "All" || task.priority === priorityFilter;
 
-    return matchesStatus && matchesPriority;
+    const matchesProject =
+      projectFilter === "All" || task.project === projectFilter;
+
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesPriority &&
+      matchesProject
+    );
+  })
+  .sort((a, b) => {
+    if (sortBy === "Title A-Z") {
+      return (a.title ?? "").localeCompare(b.title ?? "");
+    }
+
+    if (sortBy === "Due Date") {
+      return (a.date || "9999-12-31").localeCompare(
+        b.date || "9999-12-31"
+      );
+    }
+
+    if (sortBy === "Priority") {
+      const priorityOrder = { High: 0, Medium: 1, Low: 2 };
+
+      return (
+        (priorityOrder[a.priority] ?? 3) -
+        (priorityOrder[b.priority] ?? 3)
+      );
+    }
+
+    return 0;
   });
 
+    
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <Sidebar
@@ -175,6 +223,8 @@ export default function App() {
           activePage={activePage}
           onOpenSidebar={() => setSidebarOpen(true)}
           onNewTask={handleNewTask}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
 
         <main className="mx-auto max-w-7xl space-y-8 p-4 sm:p-8">
@@ -226,6 +276,11 @@ export default function App() {
                   onStatusFilterChange={setStatusFilter}
                   priorityFilter={priorityFilter}
                   onPriorityFilterChange={setPriorityFilter}
+                  projects={projects}
+                  projectFilter={projectFilter}
+                  onProjectFilterChange={setProjectFilter}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
                 />
 
                 <div className="space-y-6">
@@ -281,7 +336,7 @@ export default function App() {
 
           {activePage !== "Dashboard" && (
             <TaskList
-              tasks={visibleTasks}
+              tasks={filteredTasks}
               onViewAll={() => setActivePage("My Tasks")}
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
@@ -291,6 +346,11 @@ export default function App() {
               onStatusFilterChange={setStatusFilter}
               priorityFilter={priorityFilter}
               onPriorityFilterChange={setPriorityFilter}
+              projects={projects}
+              projectFilter={projectFilter}
+              onProjectFilterChange={setProjectFilter}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
             />
           )}
 
