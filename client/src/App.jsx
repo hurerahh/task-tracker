@@ -6,82 +6,148 @@ import {
   Clock3,
   Circle,
   CalendarDays,
+  X,
 } from "lucide-react";
 
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import StatCard from "./components/StatCard";
 import TaskList from "./components/TaskList";
+import TaskForm from "./components/TaskForm";
 
-const tasks = [
+const initialTasks = [
   {
-    id: 1,
+    id: "task-1",
     title: "Complete React fundamentals",
     project: "Personal Development",
     priority: "High",
     status: "In Progress",
-    date: "Today",
+    date: "",
   },
   {
-    id: 2,
+    id: "task-2",
     title: "Design dashboard interface",
-    project: "Task Tracker",
+    project: "Website Redesign",
     priority: "High",
     status: "Completed",
-    date: "Today",
+    date: "",
   },
   {
-    id: 3,
+    id: "task-3",
     title: "Practice JavaScript functions",
     project: "Learning",
     priority: "Medium",
     status: "To Do",
-    date: "Tomorrow",
-  },
-  {
-    id: 4,
-    title: "Review Tailwind CSS concepts",
-    project: "Learning",
-    priority: "Low",
-    status: "To Do",
-    date: "Oct 14",
-  },
-];
-
-const stats = [
-  {
-    title: "Total Tasks",
-    value: "24",
-    note: "Across all projects",
-    icon: ListTodo,
-    color: "bg-blue-50 text-blue-600",
-  },
-  {
-    title: "Completed",
-    value: "12",
-    note: "50% of all tasks",
-    icon: CircleCheck,
-    color: "bg-emerald-50 text-emerald-600",
-  },
-  {
-    title: "In Progress",
-    value: "7",
-    note: "Keep up the work",
-    icon: Clock3,
-    color: "bg-amber-50 text-amber-600",
-  },
-  {
-    title: "Overdue",
-    value: "5",
-    note: "Needs your attention",
-    icon: Circle,
-    color: "bg-rose-50 text-rose-600",
+    date: "",
   },
 ];
 
 export default function App() {
+  const [tasks, setTasks] = useState(initialTasks);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activePage, setActivePage] = useState("Dashboard");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+
+  function handleNewTask() {
+    setEditingTask(null);
+    setFormOpen(true);
+  }
+
+  function handleEditTask(task) {
+    setEditingTask(task);
+    setFormOpen(true);
+  }
+
+  function handleSaveTask(task) {
+    if (editingTask) {
+      setTasks((currentTasks) =>
+        currentTasks.map((item) =>
+          item.id === task.id ? task : item
+        )
+      );
+    } else {
+      setTasks((currentTasks) => [task, ...currentTasks]);
+    }
+
+    setFormOpen(false);
+    setEditingTask(null);
+  }
+
+  function handleDeleteTask(id) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this task?"
+    );
+
+    if (!confirmed) return;
+
+    setTasks((currentTasks) =>
+      currentTasks.filter((task) => task.id !== id)
+    );
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const completed = tasks.filter(
+    (task) => task.status === "Completed"
+  ).length;
+
+  const inProgress = tasks.filter(
+    (task) => task.status === "In Progress"
+  ).length;
+
+  const overdue = tasks.filter(
+    (task) =>
+      task.date &&
+      task.date < today &&
+      task.status !== "Completed"
+  ).length;
+
+  const stats = [
+    {
+      title: "Total Tasks",
+      value: tasks.length,
+      note: "Across all projects",
+      icon: ListTodo,
+      color: "bg-blue-50 text-blue-600",
+    },
+    {
+      title: "Completed",
+      value: completed,
+      note: "Tasks finished",
+      icon: CircleCheck,
+      color: "bg-emerald-50 text-emerald-600",
+    },
+    {
+      title: "In Progress",
+      value: inProgress,
+      note: "Currently working on",
+      icon: Clock3,
+      color: "bg-amber-50 text-amber-600",
+    },
+    {
+      title: "Overdue",
+      value: overdue,
+      note: "Past due date",
+      icon: Circle,
+      color: "bg-rose-50 text-rose-600",
+    },
+  ];
+
+  const visibleTasks =
+    activePage === "Dashboard"
+      ? tasks.slice(0, 4)
+      : activePage === "My Tasks"
+        ? tasks
+        : activePage === "Upcoming"
+          ? tasks.filter(
+              (task) => task.date && task.date >= today
+            )
+          : activePage === "Calendar"
+            ? tasks.filter((task) => task.date)
+            : tasks.filter(
+                (task) => task.project === activePage
+              );
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -96,98 +162,172 @@ export default function App() {
         <Header
           activePage={activePage}
           onOpenSidebar={() => setSidebarOpen(true)}
-          onNewTask={() => setActivePage("New Task")}
+          onNewTask={handleNewTask}
         />
 
         <main className="mx-auto max-w-7xl space-y-8 p-4 sm:p-8">
           <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm text-slate-500">
-                Sunday, October 11, 2026
+                {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
               </p>
 
-              <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-                Welcome back!
+              <h2 className="mt-2 text-2xl font-bold sm:text-3xl">
+                {activePage === "Dashboard"
+                  ? "Welcome back!"
+                  : activePage}
               </h2>
 
               <p className="mt-2 text-sm text-slate-500">
-                Here&apos;s what&apos;s happening with your tasks today.
+                Manage your work and keep track of your progress.
               </p>
             </div>
 
             <button
-              onClick={() => setActivePage("New Task")}
+              onClick={handleNewTask}
               className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
             >
               + Create new task
             </button>
           </section>
 
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {stats.map((stat) => (
-              <StatCard key={stat.title} {...stat} />
-            ))}
-          </section>
+          {activePage === "Dashboard" && (
+            <>
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {stats.map((stat) => (
+                  <StatCard key={stat.title} {...stat} />
+                ))}
+              </section>
 
-          <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+              <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                <TaskList
+                  tasks={visibleTasks}
+                  onViewAll={() => setActivePage("My Tasks")}
+                  onEdit={handleEditTask}
+                  onDelete={handleDeleteTask}
+                />
+
+                <div className="space-y-6">
+                  <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                    <h3 className="text-lg font-bold">
+                      Task Progress
+                    </h3>
+
+                    <div className="mt-5 flex items-end justify-between">
+                      <p className="text-3xl font-bold">
+                        {tasks.length
+                          ? Math.round(
+                              (completed / tasks.length) * 100
+                            )
+                          : 0}
+                        %
+                      </p>
+                      <span className="text-sm text-slate-400">
+                        {completed} of {tasks.length} tasks
+                      </span>
+                    </div>
+
+                    <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-blue-600 transition-all"
+                        style={{
+                          width: `${
+                            tasks.length
+                              ? (completed / tasks.length) * 100
+                              : 0
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  </section>
+
+                  <section className="rounded-2xl bg-blue-600 p-6 text-white">
+                    <CalendarDays size={22} />
+
+                    <h3 className="mt-4 text-xl font-bold">
+                      Small steps, big results.
+                    </h3>
+
+                    <p className="mt-2 text-sm leading-6 text-blue-100">
+                      Keep your tasks organized and make progress every day.
+                    </p>
+
+                    <button
+                      onClick={() => setActivePage("Upcoming")}
+                      className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                    >
+                      View upcoming tasks
+                    </button>
+                  </section>
+                </div>
+              </section>
+            </>
+          )}
+
+          {activePage !== "Dashboard" && (
             <TaskList
-              tasks={tasks}
+              tasks={visibleTasks}
               onViewAll={() => setActivePage("My Tasks")}
+              onEdit={handleEditTask}
+              onDelete={handleDeleteTask}
             />
-
-            <div className="space-y-6">
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-                <h3 className="text-lg font-bold">Weekly Progress</h3>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Your productivity this week.
-                </p>
-
-                <div className="mt-6 flex items-end justify-between">
-                  <p className="text-3xl font-bold">75%</p>
-                  <span className="text-sm text-slate-400">
-                    12 of 16 tasks
-                  </span>
-                </div>
-
-                <div
-                  className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100"
-                  role="progressbar"
-                  aria-label="Weekly task progress"
-                  aria-valuenow={75}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                >
-                  <div className="h-full w-3/4 rounded-full bg-blue-600" />
-                </div>
-              </section>
-
-              <section className="rounded-2xl bg-blue-600 p-6 text-white">
-                <CalendarDays size={22} />
-
-                <h3 className="mt-4 text-xl font-bold">
-                  Small steps, big results.
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-blue-100">
-                  Keep your tasks organized and make progress every day.
-                </p>
-
-                <button
-                  onClick={() => setActivePage("Upcoming")}
-                  className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-                >
-                  View upcoming tasks
-                </button>
-              </section>
-            </div>
-          </section>
+          )}
 
           <footer className="pb-2 text-center text-xs text-slate-400">
             TaskFlow · Stay organized, get things done.
           </footer>
         </main>
       </div>
+
+      {formOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-slate-950/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setFormOpen(false);
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="task-form-title"
+            className="my-auto w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl sm:p-7"
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 id="task-form-title" className="text-xl font-bold">
+                  {editingTask ? "Edit Task" : "Create New Task"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Add details for your task below.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setFormOpen(false)}
+                aria-label="Close form"
+                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <TaskForm
+              key={editingTask?.id || "new-task"}
+              initialTask={editingTask}
+              onSave={handleSaveTask}
+              onCancel={() => setFormOpen(false)}
+            />
+          </section>
+        </div>
+      )}
     </div>
   );
 }
